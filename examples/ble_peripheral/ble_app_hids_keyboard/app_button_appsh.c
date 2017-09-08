@@ -43,9 +43,9 @@ extern bool       m_in_boot_mode;
 static uint16_t pressed_key_d1[8];     /* Delay 1 interval */
 static uint16_t pressed_key_curr[8];
 static uint16_t pressed_key_prev[8];
-static uint8_t m_auth_key_input = 0;
-static uint8_t m_auth_key_cnt;
-static bool m_is_new_pairing;
+//static uint8_t m_auth_key_input = 0;
+//static uint8_t m_auth_key_cnt;
+//static bool m_is_new_pairing;
 
 typedef enum
 {
@@ -73,7 +73,7 @@ volatile uint8_t system_key;
 
 static uint32_t delay_before_sleep = 1000000;
 
-static uint8_t m_func_key;
+//static uint8_t m_func_key;
 
 #ifdef V1
     const uint32_t scan[ROW_NUM] = {12, 2, 28, 24, 23, 22, 21, 15};
@@ -193,7 +193,7 @@ uint8_t set_key(uint8_t row, uint8_t col, uint8_t press)
     ble_gap_addr_t addr;
     conn_info c_info;
     uint16_t c_info_len = sizeof(c_info);
-    uint8_t device_name[] = "Mickey-ffff";
+    uint8_t device_name[] = "Mickey-0905b-f";
     ble_gap_conn_sec_mode_t sec_mode;
 
     BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
@@ -229,7 +229,8 @@ uint8_t set_key(uint8_t row, uint8_t col, uint8_t press)
                 addr.addr[4] += (conn_id - connection_info->conn_id);
                 connection_info->conn_id = conn_id;
                 pm_id_addr_set(&addr);
-                snprintf(device_name+7, 4+1, "%02x%02x", addr.addr[4], addr.addr[5]);
+//                snprintf(device_name+7, 4+1, "%02x%02x", addr.addr[4], addr.addr[5]);
+                snprintf((char *)device_name+13, 1, "%d", connection_info->conn_id + 1);
                 sd_ble_gap_device_name_set(&sec_mode,
                                            device_name,
                                            sizeof(device_name));
@@ -259,7 +260,8 @@ uint8_t set_key(uint8_t row, uint8_t col, uint8_t press)
                 addr.addr[4] += (conn_id - connection_info->conn_id);
                 connection_info->conn_id = conn_id;
                 pm_id_addr_set(&addr);
-                snprintf(device_name+7, 4+1, "%02x%02x", addr.addr[4], addr.addr[5]);
+//                snprintf(device_name+7, 4+1, "%02x%02x", addr.addr[4], addr.addr[5]);
+                snprintf((char *)device_name+13, 1, "%d", connection_info->conn_id + 1);
                 sd_ble_gap_device_name_set(&sec_mode,
                                            device_name,
                                            sizeof(device_name));
@@ -378,6 +380,7 @@ uint8_t set_key(uint8_t row, uint8_t col, uint8_t press)
             }
         }
     }
+    return 0;
 }
 volatile int i;
 char string[128];
@@ -385,8 +388,8 @@ void xprintf(char* fmt, ...)
 {
     i = 0;
     va_list ap;
-    static uint8_t * p_key;
-    uint8_t key;
+//    static uint8_t * p_key;
+//    uint8_t key;
     va_start (ap, fmt);
     vsprintf(string, fmt, ap);
     va_end(ap);
@@ -436,8 +439,8 @@ void process_printf()
     }
 }
 
-static uint8_t passkey[6];
-static uint8_t passkey_prev = KEY_RESERVED;
+//static uint8_t passkey[6];
+//static uint8_t passkey_prev = KEY_RESERVED;
 #define NO_KEY_RETRY_NUM 10
 static void button_handler(app_button_event_t* button_event)
 {
@@ -587,7 +590,7 @@ uint32_t app_button_evt_schedule()
 void snooze_mode_enter(void)
 {
     int i;
-    uint32_t err_code;
+//    uint32_t err_code;
     battery_level_update();
     /* uint32_t err_code = bsp_indication_set(BSP_INDICATE_IDLE); */
     //NRF_LOG_INFO("Enter snooze mode!\r\n");
@@ -619,7 +622,7 @@ void snooze_mode_enter(void)
  */
 void sleep_mode_enter(void)
 {
-    int i;
+//    int i;
     uint32_t err_code;
     snooze_mode_enter();    
     
@@ -635,7 +638,7 @@ void sleep_mode_enter(void)
  */
 void buttons_leds_init(bool * p_erase_bonds)
 {
-    int i;
+//    int i;
     layer_state = 1;
     media_key = 0;
     system_key = 0;

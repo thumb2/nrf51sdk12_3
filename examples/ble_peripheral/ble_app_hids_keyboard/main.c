@@ -535,8 +535,8 @@ static void gap_params_init(void)
 
 //    if (0) {
     if (err_code == NRF_SUCCESS) {        
-      uint8_t device_name[] = "Mickey-ffff";
-      snprintf(device_name+7, 4+1, "%02x%02x", gap_addr.addr[4], gap_addr.addr[5]);
+      uint8_t device_name[] = "Mickey-0905b-f";
+      snprintf(device_name+13, 1, "%d", connection_info->conn_id + 1);
       err_code = sd_ble_gap_device_name_set(&sec_mode,
 					    device_name,
 					    sizeof(device_name));
