@@ -190,6 +190,7 @@ uint8_t set_key(uint8_t row, uint8_t col, uint8_t press)
     uint8_t pressed_key;
     uint32_t conn_id;
     pm_peer_id_t peer_id;
+    uint8_t peer_id_cnt;
     ble_gap_addr_t addr;
     conn_info c_info;
     uint16_t c_info_len = sizeof(c_info);
@@ -215,28 +216,41 @@ uint8_t set_key(uint8_t row, uint8_t col, uint8_t press)
             if ((kc & 0x1F) < 24 && (kc & 0x1F) >= 20) {
                 conn_id = (kc & 0x1F) - 20;
                 peer_id = pm_next_peer_id_get(PM_PEER_ID_INVALID);
+                peer_id_cnt = 0;
                 while ((peer_id != PM_PEER_ID_INVALID)) {
+                    peer_id_cnt++;                    
                     if (pm_peer_data_app_data_load(peer_id, (uint8_t*)&c_info, &c_info_len) == NRF_SUCCESS) {
                         if (conn_id == c_info.conn_id)  {
                             pm_peer_delete(peer_id);
-                            break;
+                            peer_id_cnt--;
+                            
+//                            break;
                         }
                     }
+
                     peer_id = pm_next_peer_id_get(peer_id);                    
                 }
+                if (peer_id_cnt == 0) {
+                    /* Erase bonds */
+                    NRF_POWER->GPREGRET = 'E';			
+                    NVIC_SystemReset();								
+                }
+                
                 NRF_LOG_INFO("New conn %02x\r\n", conn_id);
                 pm_id_addr_get(&addr);
                 addr.addr[4] += (conn_id - connection_info->conn_id);
                 connection_info->conn_id = conn_id;
                 pm_id_addr_set(&addr);
 //                snprintf(device_name+7, 4+1, "%02x%02x", addr.addr[4], addr.addr[5]);
-                snprintf((char *)device_name+13, 1, "%d", connection_info->conn_id + 1);
+                snprintf((char *)device_name+13, 2, "%d", connection_info->conn_id + 1);
                 sd_ble_gap_device_name_set(&sec_mode,
                                            device_name,
                                            sizeof(device_name));
                 if (m_conn_handle == BLE_CONN_HANDLE_INVALID) {
+                    NRF_LOG_INFO("Restart advertising %02x\r\n", conn_id);                    
                     ble_advertising_restart_without_whitelist();
                 } else {
+                    NRF_LOG_INFO("Disconnect %02x\r\n", conn_id);                                        
                     sd_ble_gap_disconnect(m_conn_handle,
                                           BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
                 }
@@ -261,7 +275,7 @@ uint8_t set_key(uint8_t row, uint8_t col, uint8_t press)
                 connection_info->conn_id = conn_id;
                 pm_id_addr_set(&addr);
 //                snprintf(device_name+7, 4+1, "%02x%02x", addr.addr[4], addr.addr[5]);
-                snprintf((char *)device_name+13, 1, "%d", connection_info->conn_id + 1);
+                snprintf((char *)device_name+13, 2, "%d", connection_info->conn_id + 1);
                 sd_ble_gap_device_name_set(&sec_mode,
                                            device_name,
                                            sizeof(device_name));

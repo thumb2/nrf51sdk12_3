@@ -101,7 +101,7 @@
 
 #define APP_ADV_FAST_INTERVAL            0x0028                                     /**< Fast advertising interval (in units of 0.625 ms. This value corresponds to 25 ms.). */
 #define APP_ADV_SLOW_INTERVAL            0x0C80                                     /**< Slow advertising interval (in units of 0.625 ms. This value corrsponds to 2 seconds). */
-#define APP_ADV_FAST_TIMEOUT             30                                         /**< The duration of the fast advertising period (in seconds). */
+#define APP_ADV_FAST_TIMEOUT             60                                         /**< The duration of the fast advertising period (in seconds). */
 #define APP_ADV_SLOW_TIMEOUT             30                                        /**< The duration of the slow advertising period (in seconds). */
 
 /*lint -emacro(524, MIN_CONN_INTERVAL) // Loss of precision */
@@ -308,6 +308,7 @@ void advertising_start(void)
     peer_list_get(m_whitelist_peers, &m_whitelist_peer_cnt);
     /* Do not use the white list */
 //    m_whitelist_peer_cnt = 0;
+    NRF_LOG_INFO("Whitelist cnt %d.\r\n", m_whitelist_peer_cnt);        
     
     ret = pm_whitelist_set(m_whitelist_peers, m_whitelist_peer_cnt);
     APP_ERROR_CHECK(ret);
@@ -318,10 +319,14 @@ void advertising_start(void)
         APP_ERROR_CHECK(ret);
     }
 
+    
+
     m_is_wl_changed = false;
 
     ret = ble_advertising_start(BLE_ADV_MODE_FAST);
-    APP_ERROR_CHECK(ret);
+    NRF_LOG_INFO("BLE Advertising Start return %d.\r\n", ret);
+    
+//    APP_ERROR_CHECK(ret);
 }
 
 
@@ -536,7 +541,7 @@ static void gap_params_init(void)
 //    if (0) {
     if (err_code == NRF_SUCCESS) {        
       uint8_t device_name[] = "Mickey-0905b-f";
-      snprintf(device_name+13, 1, "%d", connection_info->conn_id + 1);
+      snprintf(device_name+13, 2, "%d", connection_info->conn_id + 1);
       err_code = sd_ble_gap_device_name_set(&sec_mode,
 					    device_name,
 					    sizeof(device_name));
@@ -1569,7 +1574,7 @@ void advertising_init(void)
     options.ble_adv_fast_enabled           = true;
     options.ble_adv_fast_interval          = APP_ADV_FAST_INTERVAL;
     options.ble_adv_fast_timeout           = APP_ADV_FAST_TIMEOUT;
-    options.ble_adv_slow_enabled           = true;
+    options.ble_adv_slow_enabled           = false;
     options.ble_adv_slow_interval          = APP_ADV_SLOW_INTERVAL;
     options.ble_adv_slow_timeout           = APP_ADV_SLOW_TIMEOUT;
 
