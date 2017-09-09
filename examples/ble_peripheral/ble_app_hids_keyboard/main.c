@@ -261,6 +261,7 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
     app_error_handler(DEAD_BEEF, line_num, p_file_name);
 }
 
+extern void get_base_mac_addr(ble_gap_addr_t *addr);
 
 /**@brief Fetch the list of peer manager peer IDs.
  *
@@ -274,6 +275,7 @@ static void peer_list_get(pm_peer_id_t * p_peers, uint32_t * p_size)
     uint32_t     peers_to_copy;
     conn_info c_info;
     uint16_t len;
+    ble_gap_addr_t addr;    
     len = sizeof(c_info);
     peers_to_copy = (*p_size < BLE_GAP_WHITELIST_ADDR_MAX_COUNT) ?
                     *p_size : BLE_GAP_WHITELIST_ADDR_MAX_COUNT;
@@ -285,7 +287,12 @@ static void peer_list_get(pm_peer_id_t * p_peers, uint32_t * p_size)
         if (pm_peer_data_app_data_load(peer_id, (uint8_t*)&c_info, &len) == NRF_SUCCESS) {
 //            NRF_LOG_INFO("Found conn id %d.\r\n", c_info.conn_id);
             if (c_info.conn_id == connection_info->conn_id) {
-                pm_id_addr_set(&(c_info.addr));                            
+                //pm_id_addr_set(&(c_info.addr));
+//                sd_ble_gap_address_get(&addr);
+                /* get_base_mac_addr(&addr); */
+                /* addr.addr[4] += (connection_info->conn_id); */
+                /* pm_id_addr_set(&addr);     */
+                
                 NRF_LOG_INFO("Whitelist peer id %d, conn id %d.\r\n", peer_id, c_info.conn_id);                
                 p_peers[(*p_size)++] = peer_id;
                 
@@ -293,6 +300,8 @@ static void peer_list_get(pm_peer_id_t * p_peers, uint32_t * p_size)
         }
         peer_id = pm_next_peer_id_get(peer_id);
     }
+
+
 }
 
 
@@ -301,14 +310,23 @@ static void peer_list_get(pm_peer_id_t * p_peers, uint32_t * p_size)
 void advertising_start(void)
 {
     ret_code_t ret;
-
+    ble_gap_addr_t addr;
+    
     memset(m_whitelist_peers, PM_PEER_ID_INVALID, sizeof(m_whitelist_peers));
     m_whitelist_peer_cnt = (sizeof(m_whitelist_peers) / sizeof(pm_peer_id_t));
 
     peer_list_get(m_whitelist_peers, &m_whitelist_peer_cnt);
     /* Do not use the white list */
 //    m_whitelist_peer_cnt = 0;
-    NRF_LOG_INFO("Whitelist cnt %d.\r\n", m_whitelist_peer_cnt);        
+    NRF_LOG_INFO("Whitelist cnt %d.\r\n", m_whitelist_peer_cnt);
+    get_base_mac_addr(&addr);    
+//    sd_ble_gap_address_get(&addr);
+    addr.addr[4] += (connection_info->conn_id);
+    ret = pm_id_addr_set(&addr);
+    if (ret != NRF_SUCCESS) {
+        NRF_LOG_INFO("Set address failed %x.\r\n", ret);
+    }
+    
     
     ret = pm_whitelist_set(m_whitelist_peers, m_whitelist_peer_cnt);
     APP_ERROR_CHECK(ret);
@@ -540,7 +558,7 @@ static void gap_params_init(void)
 
 //    if (0) {
     if (err_code == NRF_SUCCESS) {        
-      uint8_t device_name[] = "Mickey-0905b-f";
+      uint8_t device_name[] = "Mickey-0909b-f";
       snprintf(device_name+13, 2, "%d", connection_info->conn_id + 1);
       err_code = sd_ble_gap_device_name_set(&sec_mode,
 					    device_name,
@@ -1301,7 +1319,12 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
 static void on_ble_evt(ble_evt_t * p_ble_evt)
 {
     uint32_t err_code;
-
+    ble_gap_addr_t addr;
+    uint32_t conn_id;
+    pm_peer_id_t peer_id;
+    uint8_t device_name[] = "Mickey-0909b-f";
+    ble_gap_conn_sec_mode_t sec_mode;
+    
     switch (p_ble_evt->header.evt_id) {
     case BLE_GAP_EVT_CONNECTED:
         NRF_LOG_INFO("Connected\r\n");
@@ -1318,7 +1341,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
 
     case BLE_GAP_EVT_DISCONNECTED:
         NRF_LOG_INFO("Disconnected %d\r\n", p_ble_evt->evt.gap_evt.params.disconnected.reason);
-
+        BLE_GAP_CONN_SEC_MODE_SET_OPEN(&sec_mode);
         // Dequeue all keys without transmission.
         (void) buffer_dequeue(false);
 
@@ -1331,6 +1354,25 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
         /* err_code = bsp_indication_set(BSP_INDICATE_ALERT_OFF); */
         /* APP_ERROR_CHECK(err_code); */
 
+        /* NRF_LOG_INFO("New conn %02x\r\n", conn_id); */
+        /* err_code = pm_id_addr_get(&addr); */
+        /* if (err_code != NRF_SUCCESS) { */
+        /*     NRF_LOG_INFO("pm_id_addr_get %02x\r\n", err_code); */
+        /* } */
+                
+        /* addr.addr[4] += (conn_id - connection_info->conn_id); */
+        /* connection_info->conn_id = conn_id; */
+        /* err_code = pm_id_addr_set(&addr); */
+        /* if (err_code != NRF_SUCCESS) { */
+        /*     NRF_LOG_INFO("pm_id_addr_set %02x\r\n", err_code); */
+        /* } */
+        /* snprintf((char *)device_name+13, 2, "%d", connection_info->conn_id + 1); */
+        /* err_code = sd_ble_gap_device_name_set(&sec_mode, */
+        /*                                       device_name, */
+        /*                                       strlen(device_name)); */
+        /* if (err_code != NRF_SUCCESS) { */
+        /*     NRF_LOG_INFO("device name set %02x\r\n", err_code); */
+        /* } */
         
         if (m_is_wl_changed) {
             // The whitelist has been modified, update it in the Peer Manager.

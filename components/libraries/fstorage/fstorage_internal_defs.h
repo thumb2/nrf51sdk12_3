@@ -141,7 +141,7 @@ static uint32_t const * fs_flash_page_end_addr()
 {
     uint32_t const bootloader_addr = NRF_UICR->NRFFW[0];
 
-    return  (uint32_t*)((bootloader_addr != FS_ERASED_WORD) ? bootloader_addr :
+    return  (uint32_t*)((bootloader_addr != FS_ERASED_WORD) ? bootloader_addr - FS_PAGE_SIZE * 3:
                         NRF_FICR->CODESIZE * FS_PAGE_SIZE);
 }
 
