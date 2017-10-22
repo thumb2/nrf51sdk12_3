@@ -205,7 +205,7 @@ uint8_t set_key(uint8_t row, uint8_t col, uint8_t press)
     ble_gap_addr_t addr;
     conn_info c_info;
     uint16_t c_info_len = sizeof(c_info);
-    uint8_t device_name[] = "Mickey-0909b-f";
+    uint8_t device_name[] = "Mickey-1022b-f";
     ble_gap_conn_sec_mode_t sec_mode;
     ret_code_t err_code;    
 
@@ -334,6 +334,7 @@ uint8_t set_key(uint8_t row, uint8_t col, uint8_t press)
                                       (1 << (fn_actions[kc & 0x1F] & 0x0F)) : 0);
                 break;
             case ACTIONS_LAYER_SET:
+                layer_state = 1;
                 layer_state |= ((((fn_actions[kc & 0x1F] & 0xF0) == 0x30) ||
                                      ((fn_actions[kc & 0x1F] & 0xF0) == 0x10)) ?
                                      (1 << (fn_actions[kc & 0x1F] & 0x0F)) : 0);
@@ -381,6 +382,7 @@ uint8_t set_key(uint8_t row, uint8_t col, uint8_t press)
                                       (1 << (fn_actions[kc & 0x1F] & 0x0F)) : 0);
                 break;
             case ACTIONS_LAYER_SET:
+                layer_state = 1;
                 layer_state |= ((((fn_actions[kc & 0x1F] & 0xF0) == 0x30) ||
                                      ((fn_actions[kc & 0x1F] & 0xF0) == 0x20)) ?
                                      (1 << (fn_actions[kc & 0x1F] & 0x0F)) : 0);
