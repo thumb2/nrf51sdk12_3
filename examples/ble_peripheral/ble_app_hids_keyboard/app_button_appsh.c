@@ -205,7 +205,7 @@ uint8_t set_key(uint8_t row, uint8_t col, uint8_t press)
     ble_gap_addr_t addr;
     conn_info c_info;
     uint16_t c_info_len = sizeof(c_info);
-    uint8_t device_name[] = "Mickey-1022b-f";
+    uint8_t device_name[] = "Mickey-1026b-f";
     ble_gap_conn_sec_mode_t sec_mode;
     ret_code_t err_code;    
 
@@ -596,7 +596,7 @@ static void button_handler(app_button_event_t* button_event)
         }
         snooze_mode_enter();
     } else {
-        err_code = app_timer_start(m_debounce_timer_id, 15, NULL);
+        err_code = app_timer_start(m_debounce_timer_id, 10, NULL);
     }
     for (i = NO_KEY_RETRY_NUM - 1; i > 0; i--) {
         no_key_pressed_p[i] =  no_key_pressed_p[i - 1];
