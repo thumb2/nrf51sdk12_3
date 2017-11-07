@@ -558,7 +558,7 @@ static void gap_params_init(void)
 
 //    if (0) {
     if (err_code == NRF_SUCCESS) {        
-      uint8_t device_name[] = "Mickey-1026b-f";
+      uint8_t device_name[] = "Mickey-1107b-f";
       snprintf(device_name+13, 2, "%d", connection_info->conn_id + 1);
       err_code = sd_ble_gap_device_name_set(&sec_mode,
 					    device_name,
@@ -1322,7 +1322,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
     ble_gap_addr_t addr;
     uint32_t conn_id;
     pm_peer_id_t peer_id;
-    uint8_t device_name[] = "Mickey-1026b-f";
+    uint8_t device_name[] = "Mickey-1107b-f";
     ble_gap_conn_sec_mode_t sec_mode;
     
     switch (p_ble_evt->header.evt_id) {
@@ -1688,7 +1688,7 @@ int main(void)
     buttons_leds_init(&erase_bonds);
     ble_stack_init();
     if (NRF_POWER->GPREGRET == 'E') {
-        NRF_POWER->GPREGRET == 0;
+        NRF_POWER->GPREGRET = 0;
         connection_info->conn_id = 0;
         erase_bonds = true;
         NRF_LOG_INFO("Erase peers............................\r\n");        
