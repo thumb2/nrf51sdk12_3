@@ -341,7 +341,8 @@ void advertising_start(void)
 
     m_is_wl_changed = false;
 
-    ret = ble_advertising_start(BLE_ADV_MODE_FAST);
+//    ret = ble_advertising_start(BLE_ADV_MODE_FAST);
+    ret = ble_advertising_start(BLE_ADV_MODE_DIRECTED);
     NRF_LOG_INFO("BLE Advertising Start return %d.\r\n", ret);
     
 //    APP_ERROR_CHECK(ret);
@@ -558,7 +559,7 @@ static void gap_params_init(void)
 
 //    if (0) {
     if (err_code == NRF_SUCCESS) {        
-      uint8_t device_name[] = "Mickey-1107b-f";
+      uint8_t device_name[] = "Mickey-0106b-f";
       snprintf(device_name+13, 2, "%d", connection_info->conn_id + 1);
       err_code = sd_ble_gap_device_name_set(&sec_mode,
 					    device_name,
@@ -1299,6 +1300,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
 
                 ble_gap_addr_t * p_peer_addr = &(peer_bonding_data.peer_ble_id.id_addr_info);
                 err_code = ble_advertising_peer_addr_reply(p_peer_addr);
+                NRF_LOG_DEBUG("\reply advertising peer addrr\n");
                 APP_ERROR_CHECK(err_code);
             }
         }
@@ -1322,7 +1324,7 @@ static void on_ble_evt(ble_evt_t * p_ble_evt)
     ble_gap_addr_t addr;
     uint32_t conn_id;
     pm_peer_id_t peer_id;
-    uint8_t device_name[] = "Mickey-1107b-f";
+    uint8_t device_name[] = "Mickey-0106b-f";
     ble_gap_conn_sec_mode_t sec_mode;
     
     switch (p_ble_evt->header.evt_id) {
@@ -1608,7 +1610,7 @@ void advertising_init(void)
     advdata.uuids_complete.p_uuids  = m_adv_uuids;
 
     memset(&options, 0, sizeof(options));
-    options.ble_adv_whitelist_enabled      = true;
+    options.ble_adv_whitelist_enabled      = false;
     options.ble_adv_directed_enabled       = true;
     options.ble_adv_directed_slow_enabled  = false;
     options.ble_adv_directed_slow_interval = 0;

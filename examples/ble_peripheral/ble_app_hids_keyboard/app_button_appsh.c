@@ -205,7 +205,7 @@ uint8_t set_key(uint8_t row, uint8_t col, uint8_t press)
     ble_gap_addr_t addr;
     conn_info c_info;
     uint16_t c_info_len = sizeof(c_info);
-    uint8_t device_name[] = "Mickey-1107b-f";
+    uint8_t device_name[] = "Mickey-0106b-f";
     ble_gap_conn_sec_mode_t sec_mode;
     ret_code_t err_code;    
 
