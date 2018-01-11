@@ -263,6 +263,7 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
 
 extern void get_base_mac_addr(ble_gap_addr_t *addr);
 
+
 /**@brief Fetch the list of peer manager peer IDs.
  *
  * @param[inout] p_peers   The buffer where to store the list of peer IDs.
@@ -273,10 +274,11 @@ static void peer_list_get(pm_peer_id_t * p_peers, uint32_t * p_size)
 {
     pm_peer_id_t peer_id;
     uint32_t     peers_to_copy;
-    conn_info c_info;
     uint16_t len;
-    ble_gap_addr_t addr;    
+    ble_gap_addr_t addr;
+    conn_info c_info;    
     len = sizeof(c_info);
+    memset(&c_info, 0, sizeof(c_info));    
     peers_to_copy = (*p_size < BLE_GAP_WHITELIST_ADDR_MAX_COUNT) ?
                     *p_size : BLE_GAP_WHITELIST_ADDR_MAX_COUNT;
     peer_id = pm_next_peer_id_get(PM_PEER_ID_INVALID);
@@ -292,10 +294,10 @@ static void peer_list_get(pm_peer_id_t * p_peers, uint32_t * p_size)
                 /* get_base_mac_addr(&addr); */
                 /* addr.addr[4] += (connection_info->conn_id); */
                 /* pm_id_addr_set(&addr);     */
-                
-                NRF_LOG_INFO("Whitelist peer id %d, conn id %d.\r\n", peer_id, c_info.conn_id);                
-                p_peers[(*p_size)++] = peer_id;
-                
+                p_peers[(*p_size)++] = peer_id;                
+                memcpy(connection_info, &c_info, sizeof(c_info));
+                NRF_LOG_INFO("Whitelist peer id %d, conn id %d.\r\n", peer_id, c_info.conn_id);
+                m_peer_id = peer_id;
             }
         }
         peer_id = pm_next_peer_id_get(peer_id);
@@ -342,7 +344,12 @@ void advertising_start(void)
     m_is_wl_changed = false;
 
 //    ret = ble_advertising_start(BLE_ADV_MODE_FAST);
-    ret = ble_advertising_start(BLE_ADV_MODE_DIRECTED);
+    if (m_peer_id == PM_PEER_ID_INVALID) {
+        ret = ble_advertising_start(BLE_ADV_MODE_FAST);
+    } else {
+        ret = ble_advertising_start(BLE_ADV_MODE_DIRECTED);
+    }
+    
     NRF_LOG_INFO("BLE Advertising Start return %d.\r\n", ret);
     
 //    APP_ERROR_CHECK(ret);
@@ -374,7 +381,16 @@ static void pm_evt_handler(pm_evt_t const * p_evt)
 
         m_peer_id = p_evt->peer_id;
         if (pm_peer_data_app_data_load(m_peer_id, (uint8_t*)connection_info, &len) != NRF_SUCCESS) {
-            pm_id_addr_get(&(connection_info->addr));            
+            pm_id_addr_get(&(connection_info->addr));
+            NRF_LOG_INFO("Save peer addr %02x %02x %02x %02x %02x %02x \r\n",
+                         connection_info->addr.addr[0],
+                         connection_info->addr.addr[1],
+                         connection_info->addr.addr[2],
+                         connection_info->addr.addr[3],
+                         connection_info->addr.addr[4],
+                         connection_info->addr.addr[5]);
+                         
+            //NRF_LOG_INFO("Save peer %02x, conn %02x\r\n", m_peer_id, connection_info->conn_id);            
             if (pm_peer_data_app_data_store(m_peer_id, (uint8_t*)connection_info, sizeof(conn_info), NULL) == NRF_SUCCESS) {
                 NRF_LOG_INFO("Save peer %02x, conn %02x\r\n", m_peer_id, connection_info->conn_id);
             } else {
@@ -1278,7 +1294,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
         err_code = pm_whitelist_get(whitelist_addrs, &addr_cnt,
                                     whitelist_irks,  &irk_cnt);
         APP_ERROR_CHECK(err_code);
-        NRF_LOG_DEBUG("pm_whitelist_get returns %d addr in whitelist and %d irk whitelist\r\n",
+        NRF_LOG_INFO("pm_whitelist_get returns %d addr in whitelist and %d irk whitelist\r\n",
                       addr_cnt,
                       irk_cnt);
 
@@ -1297,13 +1313,32 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
             err_code = pm_peer_data_bonding_load(m_peer_id, &peer_bonding_data);
             if (err_code != NRF_ERROR_NOT_FOUND) {
                 APP_ERROR_CHECK(err_code);
-
                 ble_gap_addr_t * p_peer_addr = &(peer_bonding_data.peer_ble_id.id_addr_info);
                 err_code = ble_advertising_peer_addr_reply(p_peer_addr);
-                NRF_LOG_DEBUG("\reply advertising peer addrr\n");
+                NRF_LOG_INFO("Peer address type %d\r\n", p_peer_addr->addr_type);
+                NRF_LOG_INFO("%02x %02x %02x %02x %02x %02x\r\n",
+                             p_peer_addr->addr[0],
+                             p_peer_addr->addr[1],
+                             p_peer_addr->addr[2],
+                             p_peer_addr->addr[3],
+                             p_peer_addr->addr[4],
+                             p_peer_addr->addr[5]);
                 APP_ERROR_CHECK(err_code);
             }
         }
+        
+        /* if (m_peer_id != PM_PEER_ID_INVALID) { */
+        /*     err_code = ble_advertising_peer_addr_reply(&(connection_info->addr));//p_peer_addr); */
+        /*     NRF_LOG_INFO("reply advertising peer addr %d",  */
+        /*                  connection_info->addr.addr_type); */
+        /*     NRF_LOG_INFO("%02x %02x %02x %02x %02x %02x\r\n", */
+        /*                  connection_info->addr.addr[0], */
+        /*                  connection_info->addr.addr[1], */
+        /*                  connection_info->addr.addr[2], */
+        /*                  connection_info->addr.addr[3], */
+        /*                  connection_info->addr.addr[4], */
+        /*                  connection_info->addr.addr[5]); */
+        /* } */
     }
     break; //BLE_ADV_EVT_PEER_ADDR_REQUEST
 
@@ -1318,12 +1353,13 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
  * @param[in]   p_ble_evt   Bluetooth stack event.
  */
 
+
 static void on_ble_evt(ble_evt_t * p_ble_evt)
 {
     uint32_t err_code;
     ble_gap_addr_t addr;
     uint32_t conn_id;
-    pm_peer_id_t peer_id;
+    pm_peer_id_t peer_id;    
     uint8_t device_name[] = "Mickey-0106b-f";
     ble_gap_conn_sec_mode_t sec_mode;
     
@@ -1610,7 +1646,7 @@ void advertising_init(void)
     advdata.uuids_complete.p_uuids  = m_adv_uuids;
 
     memset(&options, 0, sizeof(options));
-    options.ble_adv_whitelist_enabled      = false;
+    options.ble_adv_whitelist_enabled      = true;
     options.ble_adv_directed_enabled       = true;
     options.ble_adv_directed_slow_enabled  = false;
     options.ble_adv_directed_slow_interval = 0;
@@ -1680,7 +1716,7 @@ int main(void)
 
     // Initialize.
     connection_info = (void *)0x20006000;
-    
+    m_peer_id = PM_PEER_ID_INVALID;
     err_code = NRF_LOG_INIT(NULL);
     APP_ERROR_CHECK(err_code);
 
@@ -1698,6 +1734,7 @@ int main(void)
         erase_bonds = false;
         NRF_LOG_INFO("Don't erase peers............................\r\n");                
     }
+//        erase_bonds = true;    
     peer_manager_init(erase_bonds);    
     gap_params_init();
     advertising_init();
